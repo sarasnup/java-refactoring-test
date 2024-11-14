@@ -1,98 +1,52 @@
 package com.sap.refactoring.web.controller;
 
-import java.util.ArrayList;
-import java.util.List;
-
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.support.ClassPathXmlApplicationContext;
+import com.sap.refactoring.exception.UserException;
+import com.sap.refactoring.input.UserEntityInput;
+import com.sap.refactoring.service.UserService;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import com.sap.refactoring.users.User;
-import com.sap.refactoring.users.UserDao;
+@RestController
+@RequestMapping("/users/")
+public class UserController {
 
-@Controller
-@RequestMapping("/users")
-public class UserController
-{
-	public UserDao userDao;
+    UserService userService;
 
-	@GetMapping("add/")
-	public ResponseEntity addUser(@RequestParam("name") String name,
-	                              @RequestParam("email") String email,
-	                              @RequestParam("role") List<String> roles) {
+    public UserController(UserService userService) {
+        this.userService = userService;
+    }
 
-		User user = new User();
-		user.setName(name);
-		user.setEmail(email);
-		user.setRoles(roles);
 
-		if (userDao == null) {
-			userDao = UserDao.getUserDao();
-		}
+    @PostMapping("add/")
+    public ResponseEntity addUser(@RequestBody UserEntityInput user) {
+        try {
+            return userService.addUser(user);
+        } catch (UserException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
 
-		userDao.saveUser(user);
-		return ResponseEntity.ok(user);
-	}
+    @PutMapping("update/")
+    public ResponseEntity updateUser(@RequestBody UserEntityInput user) {
+        try {
+            return userService.updateUser(user);
+        } catch (UserException e) {
+            return ResponseEntity.internalServerError().body(e.getMessage());
+        }
+    }
 
-	@GetMapping("update/")
-	public ResponseEntity updateUser(@RequestParam("name") String name,
-	                           @RequestParam("email") String email,
-	                           @RequestParam("role") List<String> roles) {
+    @DeleteMapping("/{id}")
+    public ResponseEntity deleteUser(@PathVariable Integer id) {
+        return userService.deleteUser(id);
+    }
 
-		User user = new User();
-		user.setName(name);
-		user.setEmail(email);
-		user.setRoles(roles);
+    @GetMapping("users/")
+    public ResponseEntity getUsers() {
+        return userService.getUsers();
+    }
 
-		if (userDao == null) {
-			userDao = UserDao.getUserDao();
-		}
-
-		userDao.updateUser(user);
-		return ResponseEntity.ok(user);
-	}
-	@GetMapping("delete/")
-	public ResponseEntity deleteUser(@RequestParam("name") String name,
-	                           @RequestParam("email") String email,
-	                           @RequestParam("role") List<String> roles) {
-		User user = new User();
-		user.setName(name);
-		user.setEmail(email);
-		user.setRoles(roles);
-
-		if (userDao == null) {
-			userDao = UserDao.getUserDao();
-		}
-
-		userDao.deleteUser(user);
-		return ResponseEntity.ok(user);
-	}
-	@GetMapping("find/")
-	public ResponseEntity getUsers() {
-
-		ApplicationContext context = new ClassPathXmlApplicationContext(new String[] {
-				"classpath:/application-config.xml"
-		});
-		userDao = context.getBean(UserDao.class);
-		List<User> users = userDao.getUsers();
-		if (users == null) {
-			users = new ArrayList<>();
-		}
-
-		return ResponseEntity.status(200).body(users);
-	}
-	@GetMapping("search/")
-	public ResponseEntity findUser(@RequestParam("name") String name) {
-
-		if (userDao == null) {
-			userDao = UserDao.getUserDao();
-		}
-
-		User user = userDao.findUser(name);
-		return ResponseEntity.ok(user);
-	}
+    @GetMapping("searchUser/")
+    public ResponseEntity searchUsers(@RequestParam("name") String name) {
+        return userService.searchUser(name);
+    }
 }
